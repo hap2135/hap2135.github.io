@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board still capture</title>
+<meta name="robots" content="noindex">
+<!--
+  Local tool, not part of the published site. Renders a board flat-on through
+  the site's own light rig and saves it as a transparent PNG for use as a card
+  image, so the thumbnails match what the 3D viewer shows.
+
+  Serve from the project root, then save each PNG into assets/img/<slug>/ :
+      python -m http.server 8765
+      http://127.0.0.1:8765/tools/board-shot.html
+
+  Re-run it after recolouring a board - a still does not follow the GLB.
+-->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root {
+    --bg: #12120f; --panel: #1c1c18; --border: #33332c;
+    --ink: #f2efe8; --ink-soft: #a8a196; --accent: #f0a04b;
+    --mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 1.5rem;
+  }
+  h1 { font-size: 1rem; margin: 0 0 .25rem; }
+  .sub { color: var(--ink-soft); font-size: .82rem; margin: 0 0 1.25rem; max-width: 60ch; }
+
+  /* Fixed at the card's 16:10 aspect so the still needs no cropping later.
+     The checkerboard shows through the transparent background. */
+  #stage {
+    width: 1200px; height: 750px; max-width: 100%;
+    position: relative; border: 1px solid var(--border);
+    background-color: #202020;
+    background-image:
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%, transparent 75%, #2a2a2a 75%),
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%, transparent 75%, #2a2a2a 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  .viewer-status {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: var(--ink-soft); text-align: center; padding: 2rem;
+  }
+
+  .bar { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  select, button {
+    font: inherit; font-size: .85rem; padding: .5rem .8rem; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--ink);
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  .note { font-size: .78rem; color: var(--ink-soft); margin-top: 1rem; font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<h1>Board still capture</h1>
+<p class="sub">
+  Renders flat-on through the site's own light rig and saves a transparent
+  1200×750 PNG — the card's aspect ratio, so nothing needs cropping.
+</p>
+
+<div class="bar">
+  <select id="board"></select>
+  <button id="reframe">Re-frame flat-on</button>
+  <button id="flip">Flip side</button>
+  <button id="shot">Save PNG</button>
+</div>
+
+<div id="stage"><div class="viewer-status">Loading…</div></div>
+
+<p class="note" id="out">—</p>
+
+<script type="module">
+import { mountViewer } from "../js/viewer.js";
+
+const BOARDS = [
+  ["wireless-battery-management-system", "Wireless BMS"],
+  ["wireless-songbird-pir-sensor", "Songbird PIR"],
+];
+
+const $ = id => document.getElementById(id);
+let handle = null, slug = null;
+
+async function load(next) {
+  slug = next;
+
+  // Tear the previous board down first. Replacing the stage markup orphans the
+  // old renderer but leaves its WebGL context alive and its animation loop
+  // running; a few switches and the browser starts dropping contexts.
+  if (handle) {
+    handle.renderer.setAnimationLoop(null);
+    handle.renderer.dispose();
+    handle.renderer.forceContextLoss();
+    handle = null;
+  }
+
+  $("stage").innerHTML = '<div class="viewer-status">Loading…</div>';
+  handle = await mountViewer("#stage", `../assets/models/${slug}.glb`);
+  window.boardShot = handle;   // handy from the console when framing a shot
+  settle();
+  $("out").textContent = `${slug} loaded`;
+}
+
+// A still wants the square-on opening shot, not wherever the idle spin has
+// drifted to, so the rotation is stopped and the camera put back on the
+// board's face normal before every capture.
+let side = -1;   // which face the camera looks at; flipped by the button
+
+// Place the camera square on one face, computed from scratch every time.
+// viewer.js's own frame() deliberately preserves whatever heading the idle
+// spin has reached, which is right for the site and wrong for a still - a
+// capture taken through it comes out at whatever angle the board drifted to.
+function settle() {
+  if (!handle) return;
+  const { THREE, camera, controls, object } = handle;
+
+  controls.autoRotate = false;
+
+  const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+  const axes = [0, 1, 2];
+  // A board is a slab: its thinnest axis is the face normal.
+  const normal = axes.reduce((a, b) => (size.getComponent(a) <= size.getComponent(b) ? a : b));
+  const [across, up] = axes.filter(a => a !== normal);
+  const unit = i => new THREE.Vector3(+(i === 0), +(i === 1), +(i === 2));
+
+  const halfFov = THREE.MathUtils.degToRad(camera.fov) / 2;
+  const fitUp = size.getComponent(up) / 2 / Math.tan(halfFov);
+  const fitAcross = size.getComponent(across) / 2 / (Math.tan(halfFov) * camera.aspect);
+  const distance = Math.max(fitUp, fitAcross) * 1.15 + size.getComponent(normal) / 2;
+
+  camera.up.copy(unit(up));
+  camera.position.copy(unit(normal).multiplyScalar(side * distance));
+  camera.updateProjectionMatrix();
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+// Which face is "front" is arbitrary - the viewer just looks down the thinnest
+// axis, and on some boards that lands on the bare side.
+function flip() {
+  side = -side;
+  settle();
+}
+
+// Trim the transparent margin the framing leaves around the board. The card
+// scales the still with object-fit: contain, so empty pixels inside the file
+// only make the board render smaller.
+async function trim(url, pad = 8) {
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+
+  // Find the bounds on a downscaled copy. Scanning the full buffer means
+  // millions of per-pixel reads in JS, which takes long enough to look hung;
+  // at this size it is instant, and the padding below covers the imprecision.
+  const SCAN = 320;
+  const scale = SCAN / img.width;
+  const sw = SCAN, sh = Math.max(1, Math.round(img.height * scale));
+  const small = Object.assign(document.createElement("canvas"), { width: sw, height: sh });
+  small.getContext("2d").drawImage(img, 0, 0, sw, sh);
+  const { data } = small.getContext("2d").getImageData(0, 0, sw, sh);
+
+  let top = sh, left = sw, right = -1, bottom = -1;
+  for (let y = 0; y < sh; y++) {
+    for (let x = 0; x < sw; x++) {
+      if (data[(y * sw + x) * 4 + 3] < 8) continue;
+      if (x < left) left = x;
+      if (x > right) right = x;
+      if (y < top) top = y;
+      if (y > bottom) bottom = y;
+    }
+  }
+  if (right < 0) return { url, w: img.width, h: img.height };   // nothing drawn
+
+  // Back to full-resolution coordinates, then pad outwards.
+  left = Math.max(0, Math.floor(left / scale) - pad);
+  top = Math.max(0, Math.floor(top / scale) - pad);
+  right = Math.min(img.width - 1, Math.ceil(right / scale) + pad);
+  bottom = Math.min(img.height - 1, Math.ceil(bottom / scale) + pad);
+
+  const w = right - left + 1, h = bottom - top + 1;
+  const out = Object.assign(document.createElement("canvas"), { width: w, height: h });
+  out.getContext("2d").drawImage(img, left, top, w, h, 0, 0, w, h);
+  return { url: out.toDataURL("image/png"), w, h };
+}
+
+async function capture() {
+  if (!handle) return;
+  settle();
+  // The drawing buffer is not preserved, so it must be read back in the same
+  // task that draws it - render and toDataURL cannot be split across a tick.
+  handle.renderer.render(handle.scene, handle.camera);
+  const raw = handle.renderer.domElement.toDataURL("image/png");
+
+  const { url, w, h } = await trim(raw);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${slug}-hero.png`;
+  a.click();
+  $("out").textContent =
+    `saved ${a.download} — ${w}×${h}, ${Math.round(url.length * 0.75 / 1024)} KB — move it to assets/img/${slug}/hero.png`;
+}
+
+for (const [value, label] of BOARDS) $("board").add(new Option(label, value));
+$("board").addEventListener("change", e => load(e.target.value));
+$("reframe").addEventListener("click", settle);
+$("flip").addEventListener("click", flip);
+$("shot").addEventListener("click", capture);
+
+// ?board=<slug> opens straight onto a board, and &flip starts on the far face.
+// Switching boards in-page tears down and rebuilds a WebGL context, which the
+// browser does not always survive; landing on the right board in one load
+// avoids that entirely.
+const params = new URLSearchParams(location.search);
+const wanted = params.get("board");
+const start = BOARDS.some(([s]) => s === wanted) ? wanted : BOARDS[0][0];
+if (params.has("flip")) side = 1;
+$("board").value = start;
+load(start);
+</script>
+</body>
+</html>

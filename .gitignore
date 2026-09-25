@@ -1,0 +1,19 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# CAD working files — commit exported .glb/.stl, not the source history
+*.FCStd1
+*.blend1
+*~
+
+# Large raw sources: uncomment if your STEP/native files bloat the repo
+# *.step
+# *.STEP
+# *.f3d
+
+# Working notes for the coding agent — local only, not served by Pages
+CLAUDE.md

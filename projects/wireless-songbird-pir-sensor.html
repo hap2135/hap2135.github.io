@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project — EE Portfolio</title>
+<meta name="description" content="Project detail: the board, the build story and the measured result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500&family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/draft-dark.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-base="../" data-slug="wireless-songbird-pir-sensor">
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Hadley A. Pade</a>
+    <nav class="site-nav">
+      <a href="../builds.html">Projects</a>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="detail">
+  <!-- No hero here, so the title block carries the offset that keeps the
+       absolutely-positioned header off the title. -->
+  <section class="wrap page-top detail-head">
+    <h1 id="title">Loading…</h1>
+    <!-- Lede and spec strip share a row: the summary reads left, the board's
+         data sheet sits beside it rather than pushing the model down. -->
+    <div class="detail-intro">
+      <p class="lede" id="summary"></p>
+      <dl class="meta" id="meta"></dl>
+    </div>
+  </section>
+
+  <!-- The board gets a section to itself, sized to be worked in: detail.js
+       mounts it interactive, so it can be grabbed, orbited and zoomed. -->
+  <section class="wrap">
+    <div class="section-head">
+      <h2>3D Model</h2>
+      <p class="viewer-hint">Drag to rotate · click the board, then scroll, to zoom</p>
+    </div>
+    <div class="viewer" id="viewer">
+      <div class="viewer-status" hidden></div>
+    </div>
+  </section>
+
+  <!-- Where a project was simulated rather than built, a spec table stands in
+       for the board: target against result, hairline rows, no fills. Starts
+       hidden so board pages never flash an empty table; detail.js reveals it. -->
+  <section class="wrap" hidden>
+    <div class="section-head">
+      <h2>Performance</h2>
+      <p class="viewer-hint" id="specs-caption"></p>
+    </div>
+    <table class="specs">
+      <thead><tr id="specs-head"><th scope="col">Parameter</th><th scope="col">Target</th><th scope="col">Result</th></tr></thead>
+      <tbody id="specs"></tbody>
+    </table>
+    <p class="specs-note" id="specs-note"></p>
+  </section>
+
+  <section class="wrap prose">
+    <h2>Highlights</h2>
+    <ul id="highlights"></ul>
+    <div id="body"></div>
+  </section>
+
+  <section class="wrap">
+    <h2>Gallery</h2>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <p class="back wrap"><a href="../builds.html">← All builds</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p class="footer-contact">
+      <a href="mailto:hap2135@columbia.edu">hap2135@columbia.edu</a> &middot;
+      <a href="https://www.linkedin.com/in/hadleypade2026/">LinkedIn</a>
+    </p>
+    <p class="footer-note">Built with static HTML.</p>
+  </div>
+</footer>
+
+<script type="module" src="../js/detail.js"></script>
+</body>
+</html>

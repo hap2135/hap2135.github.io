@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Builds — Hadley A. Pade</title>
+<meta name="description" content="Every board, firmware project and enclosure, on one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500&family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/draft-dark.css">
+</head>
+<body data-base="">
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Hadley A. Pade</a>
+    <nav class="site-nav">
+      <a href="builds.html" aria-current="page">Projects</a>
+      <a href="index.html#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- No hero and no page title here, so this section carries the offset that
+       keeps the absolutely-positioned header off the first row of cards. -->
+  <section class="wrap page-top">
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p id="contact" class="footer-contact">
+      <a href="mailto:hap2135@columbia.edu">hap2135@columbia.edu</a> &middot;
+      <a href="https://www.linkedin.com/in/hadleypade2026/">LinkedIn</a>
+    </p>
+    <p class="footer-note">Built with static HTML.</p>
+  </div>
+</footer>
+
+<script type="module">
+  import { renderGrid } from "./js/projects.js";
+  renderGrid("#grid", "#filters");
+</script>
+</body>
+</html>

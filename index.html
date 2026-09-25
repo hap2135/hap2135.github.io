@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hadley A. Pade — Electrical Engineering</title>
+<meta name="description" content="Electrical engineering portfolio: PCB design, firmware and bring-up, from schematic capture through assembly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500&family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/draft-dark.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-base="">
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Hadley A. Pade</a>
+    <nav class="site-nav">
+      <a href="builds.html">Projects</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <!-- The 3D board fills the viewport behind the copy. viewer.js mounts its
+         canvas into this host and sizes it from the host's box. -->
+    <div class="hero-model" id="hero-model">
+      <div class="viewer-status" hidden></div>
+    </div>
+    <div class="hero-copy wrap">
+      <p class="eyebrow">Electrical Engineering</p>
+      <h1>Building for<br>the fun of it.</h1>
+      <p>
+        I'm an electrical engineering MS student at Columbia University, graduating
+        December 2026. I love owning a project end to end through Altium schematic
+        capture, layout, and assembly. My favorite part is getting the fabricated PCBs
+        back and learning exponentially more during bring-up.
+      </p>
+      <div class="cta-row">
+        <a class="btn" href="builds.html">See the builds</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="wrap prose">
+    <h2>About</h2>
+    <p>
+      I'm finishing an MS in electrical engineering at Columbia after completing a BA
+      in physics and a BS in electrical engineering as a 3+2 student with Colgate and
+      Columbia University. I've had the opportunity to co-op with Cisco Meraki's IoT
+      and image quality team, work on revolutionary HVAC sensing hardware for Thalo
+      Labs, and restore aging wind energy projects with PivotGen.
+    </p>
+    <p>
+      I owe a lot to Columbia's electric Formula SAE team, which was my first
+      engineering club when I got to Columbia. I started as the high-voltage charging
+      systems lead and finished by running the high-voltage subsystem during my second
+      year.
+      Managing four subteams taught me that the best design almost never comes from me
+      alone. It came from a culture of disagreeing and collaborating well with others:
+      a methodology that I continue to uphold today.
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p id="contact" class="footer-contact">
+      <a href="mailto:hap2135@columbia.edu">hap2135@columbia.edu</a> ·
+      <a href="https://www.linkedin.com/in/hadleypade2026/">LinkedIn</a>
+    </p>
+    <p class="footer-note">Built with static HTML.</p>
+  </div>
+</footer>
+
+<script type="module">
+  import { loadProjects } from "./js/projects.js";
+  import { mountViewer } from "./js/viewer.js";
+
+  // The grid lives on builds.html now; this page only needs the hero.
+  // It borrows whichever project listed first has a model, so it keeps
+  // working when projects.json is reordered.
+  const featured = (await loadProjects()).find(p => p.model);
+  // The hero board is decoration: it spins on its own and isn't grabbable, so
+  // the pointer belongs to the copy and the page scroll sitting over it.
+  if (featured) mountViewer("#hero-model", featured.model, { interactive: false, flip: featured.modelFlip });
+</script>
+</body>
+</html>
