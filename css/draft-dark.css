@@ -1,0 +1,526 @@
+/* The site stylesheet — full-bleed black treatment across every page. It grew
+   up as the dark draft, which is where the filename comes from, and became the
+   live design when the light css/style.css was retired.
+   Class names match what js/projects.js emits, so no JS changes are needed. */
+
+/* ---- design tokens ---------------------------------------------------- */
+:root {
+  --bg: #000000;
+  --surface: #0b0b0b;
+  --border: rgba(255, 255, 255, .2);
+  --border-soft: rgba(255, 255, 255, .1);
+  --ink: #ffffff;
+  --ink-soft: #a0a0a0;
+
+  --font: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
+
+  --space-1: .5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 3rem;
+  --space-5: 7rem;
+
+  /* Emphasis here comes from contrast and hairlines, never from a fill or a
+     corner radius, so the radius token stays at zero on purpose. */
+  --radius: 0;
+  --maxw: 1180px;
+
+  /* The tracked-caps treatment repeats on the nav, buttons, eyebrows, tags and
+     footer, so it lives in one place. */
+  --caps-track: .18em;
+}
+
+/* This page is black in both colour schemes — there is no light variant to
+   switch to, so no prefers-color-scheme block. */
+
+/* ---- base ------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-family: var(--font);
+  font-size: .95rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--ink); }
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-inline: 16px;
+}
+
+/* Headings are large but light and widely tracked — the weight of the page
+   comes from the black, not from bold type. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1.05;
+  letter-spacing: .06em;
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+}
+h1 { font-size: clamp(2.5rem, 7vw, 5.5rem); }
+h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); }
+h3 { font-size: 1.15rem; letter-spacing: var(--caps-track); }
+.muted { color: var(--ink-soft); }
+
+.eyebrow {
+  font-family: var(--font);
+  font-size: .7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+}
+
+/* ---- header ----------------------------------------------------------- */
+/* Fully transparent: it floats over the hero model with no bar, border or
+   blur of its own. Absolute rather than fixed so it scrolls away with the
+   hero instead of hanging over the project titles further down, where a
+   chrome-less bar has nothing to separate it from the content. */
+.site-header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+}
+.site-header .wrap {
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: 72px; flex-wrap: wrap;
+}
+.brand {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  text-decoration: none;
+  color: var(--ink);
+}
+.site-nav { margin-left: auto; display: flex; gap: var(--space-4); flex-wrap: wrap; }
+.site-nav a {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  transition: opacity .2s ease;
+}
+.site-nav a:hover { opacity: .6; }
+
+/* ---- hero ------------------------------------------------------------- */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 var(--space-5);
+  overflow: hidden;
+}
+
+/* The viewer host fills the hero box. viewer.js sizes its canvas from this
+   element's client box, so giving it a real height is all it needs. */
+.hero-model {
+  position: absolute; inset: 0;
+  z-index: 0;
+}
+/* Once there is width to spare, push the board into the right-hand half so
+   the headline lands on clean black rather than across the board's face. */
+@media (min-width: 900px) {
+  .hero-model { left: 28%; }
+}
+.hero-model canvas { display: block; width: 100%; height: 100%; }
+.hero-model .viewer-status {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--ink-soft);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  text-align: center;
+  padding: var(--space-3);
+}
+
+/* Scrim: copper pours and silkscreen are bright enough to swallow white type,
+   so the bottom third fades to black behind the headline. */
+.hero::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, #000 0%, rgba(0, 0, 0, .75) 22%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* The copy sits above the scrim, but must not swallow the drag gesture — only
+   the text and buttons themselves take pointer events. */
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  pointer-events: none;
+}
+.hero-copy > * { pointer-events: auto; }
+.hero-copy p {
+  font-size: 1rem;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  margin: 0;
+}
+
+.cta-row { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+.btn {
+  display: inline-block;
+  padding: .8rem 2.5rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  transition: background-color .2s ease, color .2s ease;
+}
+.btn:hover { background: var(--ink); color: var(--bg); }
+.btn.secondary { border-color: var(--border); }
+.btn.secondary:hover { border-color: var(--ink); }
+
+/* ---- page top --------------------------------------------------------- */
+/* For pages with no hero to sit over, the header still overlaps the top of
+   the document, so the first block clears it by the header's own height. */
+.page-top { padding-top: calc(72px + var(--space-4)); }
+
+/* ---- sections --------------------------------------------------------- */
+section { padding-block: var(--space-5); }
+.section-head { margin-bottom: var(--space-4); }
+.section-head p { margin: 0; }
+
+/* ---- filters ---------------------------------------------------------- */
+/* Tracked text links with an underline on the active one, rather than pills. */
+.filters { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.chip {
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  cursor: pointer;
+  padding: 0 0 .4rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--ink-soft);
+  transition: color .2s ease;
+}
+.chip:hover { color: var(--ink); }
+.chip[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* ---- project grid ----------------------------------------------------- */
+.grid {
+  display: grid; gap: var(--space-4);
+  /* 380px is the floor that keeps the longest title on one line at the type
+     size below. The min() keeps that floor from forcing a horizontal scroll
+     on a phone narrower than the floor itself. */
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+}
+.card {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  display: flex; flex-direction: column;
+}
+/* projects.js nests the title inside .card-body, below the image. Dissolving
+   that wrapper promotes its children to flex items of the card itself, so the
+   title can be ordered above the board without changing the shared markup —
+   and without moving the title on the light site, which uses its own sheet. */
+.card-body { display: contents; }
+.card h3 {
+  order: -2; margin: 0;
+  /* Every title sits on one line, so the boards below them stay in step
+     across the row without needing a reserved second line. The type is sized
+     and tracked to fit the longest one, "Wireless Battery Management
+     System", in the narrowest column the grid will build. */
+  white-space: nowrap;
+  font-size: 1.05rem;
+  letter-spacing: .14em;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+  transition: border-color .3s ease;
+}
+.card:hover h3 { border-bottom-color: var(--ink); }
+
+/* Square corners mean there is no card shape to lift — the board reacts
+   instead of the container. */
+/* No panel behind the board: the stills have transparent backgrounds, so a
+   filled box would only draw a rectangle that the board doesn't fill. The
+   board floats on the page black and the hairline under the title carries
+   the structure instead. */
+.card-media {
+  order: -1;
+  aspect-ratio: 16 / 10;
+  margin-top: var(--space-2);
+  background: transparent;
+  overflow: hidden;
+}
+/* `contain`, not `cover`: the stills are whole boards on a transparent
+   background, and cropping one to fill the box defeats the point. */
+.card-media img {
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: center;
+  transition: transform .5s ease;
+}
+.card:hover .card-media img { transform: scale(1.04); }
+
+.card p {
+  order: 1; margin: var(--space-2) 0 0;
+  font-size: .9rem; color: var(--ink-soft);
+}
+
+.tags { order: 2; display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: auto; padding-top: var(--space-2); }
+.tag {
+  font-size: .65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+}
+
+/* ---- prose ------------------------------------------------------------ */
+.prose { max-width: 68ch; }
+.wrap.prose { max-width: var(--maxw); }
+.wrap.prose > p, .wrap.prose > ul, .wrap.prose > ol { max-width: 68ch; }
+.prose a { text-decoration: none; border-bottom: 1px solid var(--border); }
+.prose a:hover { border-bottom-color: var(--ink); }
+
+/* ---- footer ----------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--border-soft);
+  padding-block: var(--space-4);
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+}
+
+.site-footer p { margin: 0; }
+
+/* The contact line reads as an address, not a caps label, so it opts out of
+   the footer's small-caps treatment and sits a step above the credit. */
+.site-footer .footer-contact {
+  margin-bottom: var(--space-2);
+  font-size: .9rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+
+.footer-contact a { text-decoration: none; border-bottom: 1px solid var(--border); }
+.footer-contact a:hover { border-bottom-color: var(--ink); }
+
+/* ---- project detail --------------------------------------------------- */
+/* The page reads as one run of related blocks — board, highlights, gallery —
+   rather than the separate landings the hero page wants, so the sections sit
+   closer together than the global rhythm. */
+/* Every section but the first: .detail-head keeps the .page-top padding that
+   clears the absolute header, which an #id selector here would outweigh. */
+#detail section + section { padding-block: var(--space-4); }
+
+/* A project page opens on type alone: the title block sits on clean black and
+   the board gets a section of its own further down, where it can be driven
+   without the copy sitting on top of it. */
+.detail-head { padding-bottom: var(--space-4); }
+.detail-head .lede {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+/* Summary and spec strip share a row under the title. The lede keeps its
+   60ch measure and the metadata takes a fixed narrow column beside it, so
+   the model section comes up rather than sitting below a full-width strip. */
+/* The first column is sized to the lede's own measure rather than 1fr: a 1fr
+   track runs to the wrap's edge and strands the strip out to the right, with
+   dead space between it and the end of the summary text. */
+.detail-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 60ch) minmax(200px, 260px);
+  justify-content: start;
+  gap: var(--space-4);
+  align-items: start;
+}
+/* A spec strip rather than a paragraph of metadata: hairline-divided rows
+   beside the summary, reading as the board's data sheet. */
+.meta {
+  margin: 0;
+  display: grid; gap: var(--space-3);
+  grid-template-columns: 1fr;
+}
+.meta > div { padding-left: var(--space-3); border-left: 1px solid var(--border-soft); }
+.meta dt {
+  font-size: .65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+}
+.meta dd { margin: .4rem 0 0; font-size: .95rem; color: var(--ink); }
+.meta dd a { text-decoration: none; border-bottom: 1px solid var(--border); }
+.meta dd a:hover { border-bottom-color: var(--ink); }
+
+/* ---- model section ---------------------------------------------------- */
+/* Same plate as the grid thumbnails — square corners, surface fill, no border
+   — only tall enough to actually work in. viewer.js sizes its canvas from this
+   element's box, so the aspect ratio is all it needs. */
+.viewer {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--surface);
+  overflow: hidden;
+  cursor: grab;
+}
+.viewer:active { cursor: grabbing; }
+.viewer canvas { display: block; width: 100%; height: 100%; }
+/* viewer.js arms the scroll wheel only once the board has been clicked, so the
+   board says so: a hairline while it holds the wheel, and nothing before. */
+.viewer.is-active { outline: 1px solid var(--border); outline-offset: -1px; }
+.viewer .viewer-status {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--ink-soft);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  text-align: center;
+  padding: var(--space-3);
+}
+/* The drag hint is an instruction, not a caption, so it keeps the tracked caps
+   the rest of the chrome uses and sits with the heading. */
+.viewer-hint {
+  font-size: .68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+}
+
+/* ---- spec table ------------------------------------------------------- */
+:root { --specs-w: 820px; }
+/* The simulated project's stand-in for a board: a data sheet in the same
+   voice as the .meta strip — tracked-caps headers over hairline rows. The
+   result column is the one being read, so it alone takes full-white ink. */
+.specs {
+  width: 100%;
+  max-width: var(--specs-w);
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.specs th, .specs td {
+  text-align: left;
+  vertical-align: top;
+  padding: .85rem var(--space-3) .85rem 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-weight: 400;
+}
+.specs thead th {
+  font-size: .65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+  border-bottom-color: var(--border);
+  padding-top: 0;
+}
+.specs tbody th { color: var(--ink-soft); }
+.specs td:last-child { color: var(--ink); padding-right: 0; }
+/* The note reads as the table's footnote, so it runs to the table's edge
+   rather than to the prose measure, and no further. */
+.specs-note {
+  max-width: var(--specs-w);
+  margin: var(--space-2) 0 0;
+  font-size: .8rem;
+}
+
+/* ---- prose, gallery, back --------------------------------------------- */
+.prose ul { padding-left: 1.1rem; }
+.prose li { margin-bottom: .4rem; }
+
+/* Two columns rather than auto-fit, so a shot can be given the full width and
+   the pair below it lands side by side underneath. */
+.gallery {
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(2, 1fr);
+}
+.gallery figure { margin: 0; }
+.gallery figure.wide { grid-column: 1 / -1; }
+.gallery img { width: 100%; background: var(--surface); }
+/* Captions take the same tracked-caps treatment as the tags and the footer,
+   so they read as labels on the plate rather than a second body voice. */
+.gallery figcaption {
+  margin-top: var(--space-1);
+  font-size: .68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  color: var(--ink-soft);
+}
+/* Units whose case carries meaning (mA vs MA, GHz vs GHZ) keep it inside any
+   caps treatment — titles, captions, hints. projects.js wraps them. */
+.unit { text-transform: none; }
+
+/* The way back out, set like the nav it returns to. */
+.back { padding-bottom: var(--space-5); }
+.back a {
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--caps-track);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+.back a:hover { border-bottom-color: var(--ink); }
+
+/* ---- small screens ---------------------------------------------------- */
+@media (max-width: 640px) {
+  .hero { min-height: 85svh; padding-bottom: var(--space-4); }
+  /* No room to put the board beside the copy, so it goes above it: the model
+     occupies the top of the hero and the text gets its own black band. */
+  .hero-model { bottom: 42%; }
+  .hero::after {
+    background: linear-gradient(to top, #000 0%, #000 42%, rgba(0, 0, 0, .55) 62%, transparent 100%);
+  }
+  .site-nav { gap: var(--space-2); }
+  .btn { padding: .75rem 1.5rem; }
+  section { padding-block: var(--space-4); }
+  /* A 16:9 slab is too shallow to read a board in at phone width, so the
+     viewer goes squarer and gets back some height. */
+  .viewer { aspect-ratio: 4 / 3; }
+  .back { padding-bottom: var(--space-4); }
+  /* Two portraits side by side are too small to read at phone width. */
+  .gallery { grid-template-columns: 1fr; }
+  /* Three columns at phone width only fit if the gutters give way. */
+  .specs th, .specs td { padding-right: var(--space-2); font-size: .85rem; }
+}
+
+/* No room for a column beside the summary — the strip drops underneath it and
+   spreads back out into side-by-side cells. */
+@media (max-width: 860px) {
+  .detail-intro {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .meta { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}

@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soldermask colour picker</title>
+<meta name="robots" content="noindex">
+<!--
+  Local tool, not part of the published site. Repaints the board's soldermask
+  materials live so a colour can be judged on the actual model, then prints the
+  recolor_glb.py command that makes it permanent.
+
+  Serve from the project root so the model and js/ paths resolve:
+      python -m http.server 8765
+      http://127.0.0.1:8765/tools/mask-color.html
+-->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root {
+    --bg: #12120f;
+    --panel: #1c1c18;
+    --border: #33332c;
+    --ink: #f2efe8;
+    --ink-soft: #a8a196;
+    --accent: #f0a04b;
+    --mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  /* .viewer-status sets an explicit `display`, which beats the [hidden]
+     attribute's default - without this the "Loading…" text never goes away. */
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; height: 100vh; display: flex; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  .viewer-status {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: var(--ink-soft); text-align: center; padding: 2rem;
+  }
+
+  aside {
+    width: 340px; flex: none; overflow-y: auto;
+    background: var(--panel); border-left: 1px solid var(--border);
+    padding: 1.25rem;
+  }
+  h1 { font-size: 1rem; margin: 0 0 .25rem; }
+  .sub { color: var(--ink-soft); font-size: .82rem; margin: 0 0 1.25rem; }
+  fieldset { border: 1px solid var(--border); border-radius: 8px; padding: .9rem; margin: 0 0 1rem; }
+  legend { padding: 0 .4rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+  label { display: block; font-size: .8rem; color: var(--ink-soft); margin-bottom: .3rem; }
+
+  .row { display: flex; align-items: center; gap: .6rem; margin-bottom: .75rem; }
+  .row:last-child { margin-bottom: 0; }
+  input[type=color] {
+    width: 52px; height: 34px; padding: 0; flex: none; cursor: pointer;
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+  }
+  input[type=text], select {
+    flex: 1; min-width: 0; font-family: var(--mono); font-size: .85rem;
+    padding: .45rem .5rem; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--ink);
+  }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+
+  .readout { font-family: var(--mono); font-size: .78rem; color: var(--ink-soft); }
+  .readout b { color: var(--accent); font-weight: 600; }
+  .readout.warn { color: var(--accent); margin-top: .35rem; }
+
+  pre {
+    font-family: var(--mono); font-size: .72rem; line-height: 1.55;
+    white-space: pre-wrap; word-break: break-all;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: .75rem; margin: 0 0 .6rem; color: var(--ink);
+  }
+  button {
+    font: inherit; font-size: .8rem; cursor: pointer;
+    padding: .5rem .9rem; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--ink);
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .note { font-size: .75rem; color: var(--ink-soft); margin: 1rem 0 0; }
+</style>
+</head>
+<body>
+
+<div id="stage"><div class="viewer-status">Loading…</div></div>
+
+<aside>
+  <h1>Soldermask colour</h1>
+  <p class="sub">Repaints the board live. Pick in sRGB; the command below is converted to the linear values the GLB stores.</p>
+
+  <fieldset>
+    <legend>Board</legend>
+    <div class="row"><select id="board"></select></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Mask over copper</legend>
+    <div class="row">
+      <input type="color" id="mask-pick">
+      <input type="text" id="mask-hex" spellcheck="false">
+    </div>
+    <div class="readout">linear <b id="mask-lin">—</b> · material <span id="mask-idx">—</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Bare laminate</legend>
+    <div class="row">
+      <input type="color" id="lam-pick">
+      <input type="text" id="lam-hex" spellcheck="false">
+    </div>
+    <div class="readout">linear <b id="lam-lin">—</b> · material <span id="lam-idx">—</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Both, together</legend>
+    <label for="bright">Brightness</label>
+    <div class="row"><input type="range" id="bright" min="20" max="300" value="100"></div>
+    <div class="readout"><span id="bright-out">100</span>% of the picked colours</div>
+    <div class="readout warn" id="clip" hidden>clipped — a channel hit maximum, raise the picked colour instead</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Make it permanent</legend>
+    <pre id="cmd">—</pre>
+    <div class="btn-row">
+      <button id="copy">Copy command</button>
+      <button id="reset">Reset to file</button>
+    </div>
+  </fieldset>
+
+  <p class="note">
+    The swatches are flat colour; the board is lit and tone-mapped, so it will
+    always read a little different. Judge the board, not the swatch.
+  </p>
+</aside>
+
+<script type="module">
+import { mountViewer } from "../js/viewer.js";
+
+const BOARDS = [
+  ["wireless-battery-management-system", "Wireless BMS"],
+  ["wireless-songbird-pir-sensor", "Songbird PIR"],
+];
+
+const $ = id => document.getElementById(id);
+
+// glTF stores baseColorFactor as linear light, but every colour picker on
+// earth speaks sRGB. These two are the whole reason this tool exists.
+const toLinear = c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+const toSrgb = c => c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055;
+
+const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+const rgbToHex = rgb => "#" + rgb.map(c => Math.round(Math.min(1, Math.max(0, c)) * 255)
+  .toString(16).padStart(2, "0")).join("");
+
+const state = { slug: null, handle: null, groups: null, file: null };
+
+/* --- find the mask materials in the GLB ------------------------------------
+   The export has no usable material names, so the two soldermask groups are
+   identified the same way the recolor script's docstring describes them: they
+   are the non-metallic ones, split by roughness (0.6 = mask over copper, which
+   is glossier; 0.85 = bare laminate). Reading them out of the file rather than
+   hardcoding indices means this keeps working if a board is re-exported. */
+async function readBoard(slug) {
+  const buf = await fetch(`../assets/models/${slug}.glb`).then(r => r.arrayBuffer());
+  const jsonLen = new DataView(buf).getUint32(12, true);
+  const doc = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, jsonLen)));
+
+  const groups = { mask: { indices: [], linear: null }, lam: { indices: [], linear: null } };
+  doc.materials.forEach((m, i) => {
+    const pbr = m.pbrMetallicRoughness || {};
+    if (pbr.metallicFactor !== 0 || !pbr.baseColorFactor) return;
+    const key = (pbr.roughnessFactor ?? 1) < 0.75 ? "mask" : "lam";
+    groups[key].indices.push(i);
+    groups[key].linear ??= pbr.baseColorFactor.slice(0, 3);
+  });
+  return groups;
+}
+
+// Materials come off the loader keyed by colour, not by index, so match the
+// live three.js materials back to the groups by their linear colour.
+function bindMaterials(object, groups) {
+  const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 0.004);
+  for (const g of Object.values(groups)) g.materials = [];
+  object.traverse(node => {
+    for (const m of [node.material].flat()) {
+      if (!m?.color) continue;
+      for (const g of Object.values(groups)) {
+        if (g.linear && near([m.color.r, m.color.g, m.color.b], g.linear)) g.materials.push(m);
+      }
+    }
+  });
+}
+
+function paint() {
+  const scale = $("bright").value / 100;
+  $("bright-out").textContent = $("bright").value;
+
+  let clipped = false;
+  for (const [key, pick, linOut] of [["mask", "mask-pick", "mask-lin"], ["lam", "lam-pick", "lam-lin"]]) {
+    // Clamp before painting, not just before printing: above 100% the scaled
+    // value can pass 1.0, and a hex code cannot carry that. Letting the
+    // preview run hot would show a board the copied command can't reproduce.
+    const raw = hexToRgb($(pick).value).map(c => toLinear(c) * scale);
+    clipped ||= raw.some(c => c > 1);
+    const linear = raw.map(c => Math.min(1, c));
+
+    state.groups[key].current = linear;
+    $(linOut).textContent = rgbToHex(linear);
+    for (const m of state.groups[key].materials) m.color.setRGB(...linear, "srgb-linear");
+  }
+  $("clip").hidden = !clipped;
+  writeCommand();
+}
+
+function writeCommand() {
+  const { mask, lam } = state.groups;
+  // recolor_glb.py takes the hex straight through as linear, so the command
+  // carries the converted values, not what the picker shows.
+  const args = [
+    ...mask.indices.map(i => `${i}=${rgbToHex(mask.current).slice(1)}`),
+    ...lam.indices.map(i => `${i}=${rgbToHex(lam.current).slice(1)}`),
+  ].join(" ");
+  $("cmd").textContent =
+    `python tools/recolor_glb.py assets/models/${state.slug}.glb ${args}`;
+}
+
+// Seed the pickers from whatever the file currently holds, converted back to
+// sRGB so the swatch matches what the eye expects.
+function seedPickers() {
+  for (const [key, pick, hex, idx] of [
+    ["mask", "mask-pick", "mask-hex", "mask-idx"],
+    ["lam", "lam-pick", "lam-hex", "lam-idx"],
+  ]) {
+    const g = state.groups[key];
+    const srgb = rgbToHex(g.linear.map(toSrgb));
+    $(pick).value = srgb;
+    $(hex).value = srgb;
+    $(idx).textContent = g.indices.join(", ") || "none found";
+  }
+  $("bright").value = 100;
+}
+
+async function load(slug) {
+  state.slug = slug;
+  const stage = $("stage");
+  stage.innerHTML = '<div class="viewer-status">Loading…</div>';
+
+  state.groups = await readBoard(slug);
+  state.handle = await mountViewer("#stage", `../assets/models/${slug}.glb`);
+  bindMaterials(state.handle.object, state.groups);
+
+  seedPickers();
+  paint();
+}
+
+// --- wiring -----------------------------------------------------------------
+for (const [slug, label] of BOARDS) {
+  $("board").add(new Option(label, slug));
+}
+$("board").addEventListener("change", e => load(e.target.value));
+
+for (const [pick, hex] of [["mask-pick", "mask-hex"], ["lam-pick", "lam-hex"]]) {
+  $(pick).addEventListener("input", () => { $(hex).value = $(pick).value; paint(); });
+  $(hex).addEventListener("change", () => {
+    const v = $(hex).value.trim().replace(/^#?/, "#");
+    if (!/^#[0-9a-f]{6}$/i.test(v)) { $(hex).value = $(pick).value; return; }
+    $(pick).value = v.toLowerCase();
+    paint();
+  });
+}
+$("bright").addEventListener("input", paint);
+$("reset").addEventListener("click", () => { seedPickers(); paint(); });
+$("copy").addEventListener("click", async () => {
+  await navigator.clipboard.writeText($("cmd").textContent);
+  $("copy").textContent = "Copied";
+  setTimeout(() => { $("copy").textContent = "Copy command"; }, 1200);
+});
+
+load(BOARDS[0][0]);
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+{
+  "projects": [
+    {
+      "slug": "wireless-battery-management-system",
+      "title": "Wireless Battery Management System",
+      "summary": "A wireless BMS PCB that monitors a 14-series lithium-ion pack using a TI BQ79616-Q1. Each node is paired with a CC2652R7 radio that sends readings over a custom 2.4 GHz link, as opposed to the usual isolated daisy-chain wiring.",
+      "tags": [],
+      "role": "Personal Electronics Project",
+      "tools": ["Altium", "PCBA Fabrication", "C", "JTAG", "TI SmartRF Studio"],
+      "hero": "assets/img/wireless-battery-management-system/hero.png",
+      "gallery": [
+        { "src": "assets/img/wireless-battery-management-system/bench-test.jpg", "wide": true, "caption": "PCB bring-up: 58 V stack supply, LaunchPad receiver, live packet stream" },
+        { "src": "assets/img/wireless-battery-management-system/dual-nodes.jpg", "caption": "Two PCBs connected at different supply voltages" },
+        { "src": "assets/img/wireless-battery-management-system/two-node-stream.jpg", "caption": "Both resistor-divider segments receiving cell voltages and NTC temperature readings on one channel" }
+      ],
+      "model": "assets/models/wireless-battery-management-system.glb",
+      "highlights": [
+        "Utilized an embedded 2.4 GHz PCB antenna with an 0201-component impedance-matching network.",
+        "Transmitted from two PCBs at the same time on one channel, each identified by its factory MAC address.",
+        "Implemented a buck converter and LDO combination that converted the stack voltage to 5 V and 3.3 V supply rails."
+      ],
+      "body": ""
+    },
+    {
+      "slug": "wireless-songbird-pir-sensor",
+      "title": "Wireless Songbird PIR Sensor",
+      "summary": "A wireless PCB that tracks songbird activity for Columbia labs, using a PIR motion sensor, Li-Po battery circuitry, and a TI CC1310 Sub-GHz radio module. Each node sends motion detection counts, live battery data, and its cage ID over a 433 MHz link.",
+      "year": "2025",
+      "tags": [],
+      "role": "Columbia University Research Project",
+      "tools": ["Altium", "PCBA Fabrication", "C", "Python", "3D Printing"],
+      "hero": "assets/img/wireless-songbird-pir-sensor/hero.png",
+      "gallery": [
+        { "src": "assets/img/wireless-songbird-pir-sensor/power-profile.png", "wide": true, "caption": "Power profile: 337 µA average with 20 mA current spikes during each packet transmission, sent every 3 minutes" },
+        { "src": "assets/img/wireless-songbird-pir-sensor/enclosure.jpg", "caption": "PCBA and 820 mAh Li-Po inside a 3D-printed enclosure" },
+        { "src": "assets/img/wireless-songbird-pir-sensor/eeprom-tag.jpg", "caption": "Cage-ID EEPROM PCBA + enclosure" },
+        { "src": "assets/img/wireless-songbird-pir-sensor/cage-mount.jpg", "caption": "Sensor node mounted on a songbird cage" },
+        { "src": "assets/img/wireless-songbird-pir-sensor/panel.jpg", "caption": "4×5 PCBA panel for V-cut assembly" }
+      ],
+      "model": "assets/models/wireless-songbird-pir-sensor.glb",
+      "modelFlip": true,
+      "highlights": [
+        "Measured a 337 µA average current draw with a power analyzer, then sized the Li-Po down to 820 mAh to cut BOM cost while still achieving a 100-day battery life.",
+        "Utilized accelerometer data to switch between monitoring and a low-power ready-to-charge state, depending on the sensor node's current position.",
+        "Designed a second EEPROM PCB that remains on each cage and plugs into the sensor's USB-C charging port, allowing the sensor to tag every packet with the cage's hardcoded ID.",
+        "Managed production of 100 PCBAs through JLCPCB, coordinating part selection and Li-Po battery orders."
+      ],
+      "body": ""
+    },
+    {
+      "slug": "12-ghz-low-noise-amplifier",
+      "title": "12 GHz Low-Noise Amplifier",
+      "summary": "A two-stage GaAs low-noise amplifier for the 11.4–12.7 GHz Ku-band Starlink downlink, designed and simulated in Keysight ADS on Rogers RT/duroid 5880.",
+      "tags": [],
+      "role": "Microwave Circuits Final Project",
+      "tools": ["Keysight ADS", "Smith Chart Matching", "Noise & Gain Circles"],
+      "hero": "assets/img/12-ghz-low-noise-amplifier/final-schematic.png",
+      "specs": {
+        "caption": "Simulated in Keysight ADS",
+        "columns": ["Parameter", "Target", "Result (11.4–12.7 GHz)"],
+        "rows": [
+          { "label": "Noise figure", "target": "&lt; 1 dB", "result": "&lt; 0.9 dB" },
+          { "label": "Gain (S<sub>21</sub>)", "target": "&gt; 20 dB", "result": "23.4 dB or better" },
+          { "label": "Output match (S<sub>22</sub>)", "target": "&lt; −14 dB", "result": "−14.4 dB or better" },
+          { "label": "Input match (S<sub>11</sub>)", "target": "&lt; −10 dB", "result": "−12.0 dB or better" },
+          { "label": "Stability", "target": "Unconditional, 0.1–20 GHz", "result": "μ > 1 across 0.1–20 GHz" },
+          { "label": "Output P1dB", "target": "—", "result": "+11.7 dBm" },
+          { "label": "Output IP3", "target": "—", "result": "24 dBm" },
+          { "label": "DC power", "target": "—", "result": "100 mW" }
+        ],
+        "note": "Small-signal results use the transistor's S-parameter data. The nonlinear model was used for compression, IP3, and DC power."
+      },
+      "gallery": [
+        { "src": "assets/img/12-ghz-low-noise-amplifier/transistor-stability.png", "wide": true, "caption": "Stabilizing the transistor: a 450 Ω gate shunt resistor keeps the stability factor above 1 from 0.1 to 20 GHz" },
+        { "src": "assets/img/12-ghz-low-noise-amplifier/stage1-noise-match.png", "wide": true, "caption": "Stage 1 matched for minimum noise: 0.685 dB noise figure at 12 GHz" },
+        { "src": "assets/img/12-ghz-low-noise-amplifier/final-schematic.png", "wide": true, "caption": "Final two-stage schematic with radial-stub bias feeds and a coupled-line interstage DC block" },
+        { "src": "assets/img/12-ghz-low-noise-amplifier/achieved-specs.png", "wide": true, "caption": "Simulated gain, noise figure, input and output match, and stability from 0.1 to 20 GHz" }
+      ],
+      "highlights": [
+        "Selected the NE3210S01 from four candidate GaAs transistors for its low 0.34 dB NFmin and high 13.5 dB associated gain at the target 12 GHz.",
+        "Stabilized each stage with a 450 Ω gate shunt resistor by identifying the largest value that kept μ above 1 from 0.1 to 20 GHz while minimizing the amount of added noise.",
+        "Noise-matched the first stage to Γopt to minimize the cascaded noise figure and gain-matched the second stage with noise/gain circles to achieve the required gain."
+      ],
+      "body": ""
+    }
+  ]
+}
